@@ -1,0 +1,42 @@
+{
+  "class": "sensor",
+  "type": "lidar",
+  "name": "lidar_vfov45_hfvov360_300kps",
+  "driveWorksId": "GENERIC",
+  "profile": {
+    "scanType": "rotary",
+    "intensityProcessing": "normalization",
+    "rayType": "IDEALIZED",
+    "nearRangeM": 0.05,
+    "farRangeM": 100.0,
+    "startAzimuthDeg": -180.0,
+    "endAzimuthDeg": 180.0,
+    "upElevationDeg": 0.0,
+    "downElevationDeg": 45.0,
+    "rangeResolutionM": 0.001,
+    "rangeAccuracyM": 0.04,
+    "avgPowerW": 3.6,
+    "minReflectance": 0.1,
+    "minReflectanceRange": 120.0,
+    "wavelengthNm": 905.0,
+    "pulseTimeNs": 23,
+    "azimuthErrorMean": 0.0,
+    "azimuthErrorStd": 0.0,
+    "elevationErrorMean": 0.0,
+    "elevationErrorStd": 0.0,
+    "reportTypes": "Strongest",
+    "maxReturns": 1,
+    "scanRatesHz": [
+      30.0
+    ],
+    "scanRateBaseHz": 30.0,
+    "reportRateBaseHz": 302400,
+    "numberOfEmitters": 0,
+    "emitters": {
+      "azimuthDeg": [],
+      "elevationDeg": [],
+      "fireTimeNs": []
+    },
+    "intensityMappingType": "LINEAR"
+  }
+}
