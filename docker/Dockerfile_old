@@ -61,7 +61,7 @@ WORKDIR /root
 RUN pip3 install kconfiglib jinja2 empy jsonschema pyros-genmsg packaging toml numpy future
 
 # Clone and patch Pegasus with pyproject.toml for editable install
-RUN git clone https://github.com/PegasusSimulator/PegasusSimulator.git && \
+RUN git clone https://github.com/Robotgir/PegasusSimulator_IsaacSim_4.5.git && \
     mkdir -p PegasusSimulator/extensions/pegasus.simulator && \
     echo "[build-system]" > PegasusSimulator/extensions/pegasus.simulator/pyproject.toml && \
     echo "requires = [\"setuptools\", \"wheel\", \"toml\"]" >> PegasusSimulator/extensions/pegasus.simulator/pyproject.toml && \
