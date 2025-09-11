@@ -1,7 +1,7 @@
 #!/bin/bash
 xhost +local:
 
-docker run --name isaac-sim-ros2 --entrypoint bash -it --gpus all -e "ACCEPT_EULA=Y" --rm --network=host --privileged \
+docker run --name isaac-sim-ros2 --entrypoint bash -it --gpus device=1 -e "ACCEPT_EULA=Y" --rm --network=host --privileged \
     -v ~/docker/isaac-sim-ros2/cache/kit:/isaac-sim/kit/cache/Kit:rw \
     -v ~/docker/isaac-sim-ros2/cache/ov:/root/.cache/ov:rw \
     -v ~/docker/isaac-sim-ros2/cache/pip:/root/.cache/pip:rw \
