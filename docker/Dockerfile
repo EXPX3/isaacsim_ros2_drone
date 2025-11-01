@@ -1,81 +1,127 @@
-FROM nvcr.io/nvidia/isaac-sim:4.5.0
+FROM nvcr.io/nvidia/isaac-sim:5.1.0
 
 ENV DEBIAN_FRONTEND=noninteractive
+# install dependencies via apt
 ENV DEBCONF_NOWARNINGS=yes
 
-# Install all APT dependencies in one layer
-RUN apt-get update -y -qq && \
-    apt-get upgrade -y -qq --no-install-recommends && \
-    apt-get install -y -qq \
-      libyaml-cpp-dev curl software-properties-common \
-      vim v4l-utils exfatprogs \
-      openssh-server terminator dbus-x11 \
-      python3-pip dirmngr gnupg2 lsb-release \
-      telnet git make cmake \
-      gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl \
-      libqt5gui5 libfuse2 gedit tmux && \
-    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
+USER root
+# install dependencies via apt
+RUN set -x && \
+  apt-get update -y -qq && \
+  apt-get upgrade -y -qq --no-install-recommends && \
+  apt-get install -y -qq \
+    libyaml-cpp-dev curl software-properties-common \
+    vim v4l-utils exfat-* \
+    openssh-server \
+    terminator dbus-x11 \
+    python3-pip && \
+  : "remove cache" && \
+  apt-get autoremove -y -qq && \
+  rm -rf /var/lib/apt/lists/*
+
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
     apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main" && \
-    apt-get update -y -qq && \
-    apt-get install -y -qq cmake && \
-    apt-get remove modemmanager -y && \
-    apt-get autoremove -y -qq && \
-    /isaac-sim/python.sh -m pip install colcon-ros
+    apt update && \
+    apt install -y -qq cmake
 
-# Install ROS 2 Humble
-RUN ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime && \
-    apt-get update -y && \
-    apt-get install -f -y && \
-    dpkg --configure -a && \
-    # Ensure correct version of libbrotli1
-    apt-get install -y --allow-downgrades libbrotli1=1.0.9-2build6 && \
-    apt-get install -y software-properties-common mesa-utils libglu1-mesa-dev \
-      freeglut3-dev mesa-common-dev libglew-dev libglfw3-dev libglm-dev \
-      libao-dev libmpg123-dev libasio-dev libfreetype6-dev libfontconfig1-dev libbrotli-dev && \
-    add-apt-repository universe && \
-    apt-get update -y && \
-    apt-get install -y curl && \
-    curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" > /etc/apt/sources.list.d/ros2.list && \
-    apt-get update -y && \
-    apt-get upgrade -y && \
-    apt-get install -y ros-humble-desktop \
-      ros-humble-ament-cmake ros-humble-angles ros-humble-controller-manager \
-      ros-humble-pluginlib ros-humble-urdf ros-humble-yaml-cpp-vendor ros-humble-joint-state-pub* \
-      ros-humble-cv-bridge ros-humble-diagnostic-updater \
-      ros-humble-moveit ros-humble-xacro ros-humble-realtime-tools \
-      ros-humble-control-toolbox ros-humble-ros2-control* \
-      ros-humble-teleop-twist-keyboard ros-humble-vision-msgs || { echo "Failed to install ROS 2 packages"; apt-get install -y --fix-broken; exit 1; } && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    # Install common tools and enable universe repo
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    curl \
+    gnupg2 \
+    lsb-release \
+    && add-apt-repository universe \
+    && apt-get update \
+    && rm -rf /var/lib/apt/lists/*
 
-# Ensure Python deps are available before Pegasus install
+# ------------------------------------------------------------
+# 3. Add ROS 2 Jazzy repository (noble)
+# ------------------------------------------------------------
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+        -o /usr/share/keyrings/ros-archive-keyring.gpg \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+        http://packages.ros.org/ros2/ubuntu noble main" \
+        > /etc/apt/sources.list.d/ros2.list
+
+# ------------------------------------------------------------
+# 4. Install ROS 2 Jazzy + your extra packages
+# ------------------------------------------------------------
+RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
+        # ---- graphics / audio libs you wanted (most already in Isaac Sim) ----
+        mesa-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev \
+        libglew-dev libglfw3-dev libglm-dev libao-dev libmpg123-dev libasio-dev \
+        \
+        # ---- ROS 2 Jazzy -------------------------------------------------
+        ros-jazzy-desktop \
+        \
+        # Build & core tools
+        ros-jazzy-ament-cmake \
+        \
+        # Robot-specific
+        ros-jazzy-angles \
+        ros-jazzy-controller-manager \
+        ros-jazzy-pluginlib \
+        ros-jazzy-urdf \
+        ros-jazzy-yaml-cpp-vendor \
+        \
+        # Joint state (exact names, no glob)
+        ros-jazzy-joint-state-publisher \
+        ros-jazzy-joint-state-publisher-gui \
+        \
+        # Vision & diagnostics
+        ros-jazzy-cv-bridge \
+        ros-jazzy-diagnostic-updater \
+        \
+        # Motion planning
+        ros-jazzy-moveit \
+        \
+        # Additional packages you listed
+        ros-jazzy-xacro \
+        ros-jazzy-realtime-tools \
+        ros-jazzy-control-toolbox \
+        ros-jazzy-ros2-control \
+        ros-jazzy-ros2-controllers \
+        ros-jazzy-teleop-twist-keyboard \
+        ros-jazzy-vision-msgs \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -q -y --no-install-recommends \
+    dirmngr \
+    gnupg2 \
+    lsb-release \
+    python3-colcon-ros \
+    telnet \
+    nano \
+    && apt-get clean
+
+RUN apt install git make cmake python3-pip python3.12-venv -y
+
+# Drone dev
 WORKDIR /root
-# RUN /isaac-sim/python.sh -m pip install \
-#       kconfiglib jinja2 empy jsonschema pyros-genmsg packaging toml numpy future && \
-#     git clone https://github.com/PegasusSimulator/PegasusSimulator.git && \
-#     cd PegasusSimulator/extensions/pegasus.simulator && \
-#     /isaac-sim/python.sh setup.py develop
+RUN python3 -m venv /opt/build-venv && \
+    /opt/build-venv/bin/pip install --upgrade pip && \
+    /opt/build-venv/bin/pip install --no-cache-dir \
+        kconfiglib jinja2 empy jsonschema pyros-genmsg \
+        packaging toml numpy future
 
-RUN pip3 install kconfiglib jinja2 empy jsonschema pyros-genmsg packaging toml numpy future
+# Make it the default python for subsequent RUN commands
+ENV PATH="/opt/build-venv/bin:$PATH"
 
-# Clone and patch Pegasus with pyproject.toml for editable install
-# Set ISAACSIM_PATH and clone/install Pegasus Simulator
+
 RUN export ISAACSIM_PATH="/isaac-sim" && \
+    echo 'export ISAACSIM_PATH="/isaac-sim"' >> ~/.bashrc && \
     git clone https://github.com/PegasusSimulator/PegasusSimulator.git && \
-    mkdir -p PegasusSimulator/extensions/pegasus.simulator && \
-    echo "[build-system]" > PegasusSimulator/extensions/pegasus.simulator/pyproject.toml && \
-    echo "requires = [\"setuptools\", \"wheel\", \"toml\"]" >> PegasusSimulator/extensions/pegasus.simulator/pyproject.toml && \
-    echo "build-backend = \"setuptools.build_meta\"" >> PegasusSimulator/extensions/pegasus.simulator/pyproject.toml && \
-    cd PegasusSimulator/extensions/pegasus.simulator && \
-    /isaac-sim/python.sh -m pip install --editable .
+    cd /root/PegasusSimulator/extensions && \
+    /isaac-sim/python.sh -m pip install --editable pegasus.simulator
 
 
-RUN git clone https://github.com/PX4/PX4-Autopilot.git && \
-    cd PX4-Autopilot && \
-    git checkout v1.14.1 && \
-    git submodule update --init --recursive
+WORKDIR /root
+RUN git clone https://github.com/PX4/PX4-Autopilot.git
+WORKDIR /root/PX4-Autopilot/
+RUN git checkout v1.14.3
+RUN git submodule update --init --recursive
 
 # Install QGroundControl and configure user
 WORKDIR /home/ubuntu
@@ -98,5 +144,6 @@ RUN echo 'source /opt/ros/humble/setup.bash' >> ~/.bashrc && \
 
 # Clean up
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
 
 ENTRYPOINT ["/bin/bash"]
