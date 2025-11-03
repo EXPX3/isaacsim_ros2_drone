@@ -97,9 +97,9 @@ RUN apt-get update && apt-get install -q -y --no-install-recommends \
     && apt-get clean
 
 RUN apt install git make cmake python3-pip python3.12-venv -y
+RUN pip install kconfiglib jinja2 empy jsonschema pyros-genmsg packaging toml numpy future
 
 # Drone dev
-WORKDIR /root
 RUN python3 -m venv /opt/build-venv && \
     /opt/build-venv/bin/pip install --upgrade pip && \
     /opt/build-venv/bin/pip install --no-cache-dir \
