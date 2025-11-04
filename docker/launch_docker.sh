@@ -11,8 +11,6 @@ docker run --name isaac-sim-ros2 --entrypoint bash -it --gpus device=1 -e "ACCEP
     -v ~/docker/isaac-sim-ros2/data:/root/.local/share/ov/data:rw \
     -v ~/docker/isaac-sim-ros2/documents:/root/Documents:rw \
     --env="DISPLAY" \
-    -v $(pwd)/../PX4_1_14_3/PX4-Autopilot/build:/root/PX4-Autopilot/build:rw \
-    -v $(pwd)/../PX4_1_14_3/QGC:/home/ubuntu/Documents/QGroundControl:rw \
     -v $HOME/.Xauthority:/root/.Xauthority:rw \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     --workdir="/root/colcon_ws" \

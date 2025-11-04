@@ -1,127 +1,143 @@
+# syntax=docker/dockerfile:1.7
 FROM nvcr.io/nvidia/isaac-sim:5.1.0
 
-USER root 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV DEBCONF_NOWARNINGS=yes
+USER root
+ENV DEBIAN_FRONTEND=noninteractive \
+    DEBCONF_NOWARNINGS=yes \
+    PX4_VENV=/opt/px4_venv
 
 # ------------------------------------------------------------
-# 1. System dependencies (apt) - merged & cleaned
+# 1. Fix apt lists + System dependencies
 # ------------------------------------------------------------
+RUN mkdir -p /var/lib/apt/lists/partial && \
+    chown -R root:root /var/lib/apt/lists && \
+    chmod -R 755 /var/lib/apt/lists && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update -y -qq && \
     apt-get upgrade -y -qq --no-install-recommends && \
-    apt-get install -y -qq \
+    apt-get install -y -qq --no-install-recommends \
+      git wget make build-essential \
+      libc6-dev libstdc++-12-dev \
+      python3-pip python3-venv ca-certificates \
       libyaml-cpp-dev curl software-properties-common \
-      vim v4l-utils exfatprogs \
-      openssh-server terminator dbus-x11 \
-      python3-pip dirmngr gnupg2 lsb-release \
-      telnet git make cmake \
-      gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl \
-      libqt5gui5 libfuse2 gedit tmux && \
-    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
-    apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main" && \
+      vim v4l-utils exfatprogs openssh-server terminator dbus-x11 \
+      dirmngr gnupg2 lsb-release telnet gstreamer1.0-plugins-bad \
+      gstreamer1.0-libav gstreamer1.0-gl libqt5gui5 libfuse2 gedit tmux \
+      mesa-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev \
+      libglew-dev libglfw3-dev libglm-dev libao-dev libmpg123-dev \
+      libasio-dev libfreetype6-dev libfontconfig1-dev libbrotli-dev && \
+    \
+    # Add Kitware repo with proper key isolation
+    wget -qO - https://apt.kitware.com/keys/kitware-archive-latest.asc | \
+      gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ noble main" > /etc/apt/sources.list.d/kitware.list && \
+    \
     apt-get update -y -qq && \
     apt-get install -y -qq cmake && \
-    apt-get remove modemmanager -y || true && \
+    \
+    # Fully remove Kitware repo and key
+    rm -f /etc/apt/sources.list.d/kitware.list && \
+    rm -f /usr/share/keyrings/kitware-archive-keyring.gpg && \
+    \
+    # Remove conflicting packages
+    apt-get remove -y modemmanager || true && \
     apt-get autoremove -y -qq && \
-    /isaac-sim/python.sh -m pip install colcon-ros && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------
 # 2. ROS 2 Jazzy + Robotics Packages
 # ------------------------------------------------------------
 RUN ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime && \
-    apt-get update -y && \
-    apt-get install -f -y && \
-    dpkg --configure -a && \
-    apt-get install -y software-properties-common mesa-utils libglu1-mesa-dev \
-      freeglut3-dev mesa-common-dev libglew-dev libglfw3-dev libglm-dev \
-      libao-dev libmpg123-dev libasio-dev libfreetype6-dev libfontconfig1-dev libbrotli-dev && \
-    add-apt-repository universe && \
-    apt-get update -y && \
+    add-apt-repository universe -y && \
+    \
     curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu noble main" > /etc/apt/sources.list.d/ros2.list && \
+    \
     apt-get update -y && \
     apt-get upgrade -y && \
-    apt-get install -y ros-jazzy-desktop \
+    apt-get install -y --no-install-recommends \
+      ros-jazzy-desktop \
       ros-jazzy-ament-cmake ros-jazzy-angles ros-jazzy-controller-manager \
       ros-jazzy-pluginlib ros-jazzy-urdf ros-jazzy-yaml-cpp-vendor \
-      ros-jazzy-joint-state-publisher* \
-      ros-jazzy-cv-bridge ros-jazzy-diagnostic-updater \
-      ros-jazzy-moveit ros-jazzy-xacro ros-jazzy-realtime-tools \
-      ros-jazzy-control-toolbox ros-jazzy-ros2-control* \
-      ros-jazzy-teleop-twist-keyboard ros-jazzy-vision-msgs || { echo "Failed to install ROS 2 packages"; apt-get install -y --fix-broken; exit 1; } && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+      ros-jazzy-joint-state-publisher* ros-jazzy-cv-bridge \
+      ros-jazzy-diagnostic-updater ros-jazzy-moveit ros-jazzy-xacro \
+      ros-jazzy-realtime-tools ros-jazzy-control-toolbox \
+      ros-jazzy-ros2-control* ros-jazzy-teleop-twist-keyboard \
+      ros-jazzy-vision-msgs && \
+    \
+    /isaac-sim/python.sh -m pip install --no-cache-dir colcon-ros && \
+    \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------
-# 3. Python dependencies for Pegasus & PX4 (via Isaac Sim Python)
+# 3. Clone PX4-Autopilot
 # ------------------------------------------------------------
 WORKDIR /root
-RUN pip3 install --force-reinstall --break-system-packages \
-    pyros-genmsg jinja2 toml kconfiglib
-RUN apt-get update && apt-get install -y pipx && \
-    pipx ensurepath && \
-    pipx install jsonschema && \
-    pipx install future
-# ------------------------------------------------------------
-# 4. Clone and install Pegasus Simulator (editable, no venv)
-# ------------------------------------------------------------
-RUN export ISAACSIM_PATH="/isaac-sim" && \
-    git clone https://github.com/PegasusSimulator/PegasusSimulator.git && \
-    mkdir -p PegasusSimulator/extensions/pegasus.simulator && \
-    echo "[build-system]" > PegasusSimulator/extensions/pegasus.simulator/pyproject.toml && \
-    echo "requires = [\"setuptools\", \"wheel\", \"toml\"]" >> PegasusSimulator/extensions/pegasus.simulator/pyproject.toml && \
-    echo "build-backend = \"setuptools.build_meta\"" >> PegasusSimulator/extensions/pegasus.simulator/pyproject.toml && \
-    cd PegasusSimulator/extensions/pegasus.simulator && \
-    /isaac-sim/python.sh -m pip install --editable .
-
-# ------------------------------------------------------------
-# 5. Clone PX4-Autopilot
-# ------------------------------------------------------------
 RUN git clone https://github.com/PX4/PX4-Autopilot.git && \
     cd PX4-Autopilot && \
-    git checkout v1.14.3 && \
+    git checkout v1.16.0 && \
     git submodule update --init --recursive
 
 # ------------------------------------------------------------
-# 6. Build PX4 SITL using Isaac Sim Python directly
+# 4. Setup PX4 Virtual Environment + Dependencies
 # ------------------------------------------------------------
+RUN python3 -m venv $PX4_VENV && \
+    $PX4_VENV/bin/pip install --no-cache-dir --upgrade pip && \
+    $PX4_VENV/bin/pip install --no-cache-dir \
+      kconfiglib jinja2 "empy<4.0" jsonschema pyros-genmsg \
+      packaging toml numpy future pyyaml
 
-RUN find /root/PX4-Autopilot -name CMakeLists.txt \
-    -exec grep -l "cmake_minimum_required.*VERSION [0-2]\." {} \; \
-    -exec sed -i '1s/.*/cmake_minimum_required(VERSION 3.5)/' {} \;
+# ------------------------------------------------------------
+# 5. Build PX4 SITL (with Isaac Sim compatibility patches)
+# ------------------------------------------------------------
+RUN . $PX4_VENV/bin/activate && \
+    cd PX4-Autopilot && \
+    # find /root/PX4-Autopilot -name CMakeLists.txt \
+    # -exec grep -l "cmake_minimum_required.*VERSION [0-2]\." {} \; \
+    # -exec sed -i '1s/.*/cmake_minimum_required(VERSION 3.5)/' {} \; && \
+    # sed -i '/#include <unistd.h>/a #include <stdint.h>' platforms/posix/src/px4/common/px4_daemon/pxh.cpp && \
+    # sed -i 's/return _data\[i\]\[j\];/return _data[0][0];/g' src/lib/matrix/matrix/Matrix.hpp && \
+    make px4_sitl_default && \
+    echo "PX4 SITL BUILD COMPLETE — BINARY READY" && \
+    deactivate
 
-RUN pip3 install --force-reinstall --break-system-packages \
-    jsonschema
-
-RUN cd /root/PX4-Autopilot && \
-    make distclean && \
-    cmake -B build/px4_sitl_default \
-          -S . \
-          -DCMAKE_BUILD_TYPE=Release && \
-    make -C build/px4_sitl_default px4 && \
-    ls -l build/px4_sitl_default/bin/px4 && \
-    echo "PX4 SITL BUILD SUCCESSFUL"
+# ------------------------------------------------------------
+# 6. Clone and install Pegasus Simulator (editable)
+# ------------------------------------------------------------
+RUN export ISAACSIM_PATH="/isaac-sim" && \
+    git clone https://github.com/PegasusSimulator/PegasusSimulator.git /root/PegasusSimulator && \
+    mkdir -p /root/PegasusSimulator/extensions/pegasus.simulator && \
+    { \
+      echo "[build-system]"; \
+      echo "requires = [\"setuptools\", \"wheel\", \"toml\"]"; \
+      echo "build-backend = \"setuptools.build_meta\""; \
+    } > /root/PegasusSimulator/extensions/pegasus.simulator/pyproject.toml && \
+    /isaac-sim/python.sh -m pip install --editable /root/PegasusSimulator/extensions/pegasus.simulator
 
 # ------------------------------------------------------------
 # 7. QGroundControl
 # ------------------------------------------------------------
 WORKDIR /home/ubuntu
-RUN wget https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl-x86_64.AppImage && \
-    chmod +x ./QGroundControl-x86_64.AppImage && \
-    usermod -a -G dialout ubuntu
+
+RUN wget -q https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl-x86_64.AppImage -O QGroundControl.AppImage && \
+    chmod +x QGroundControl.AppImage && \
+    ./QGroundControl.AppImage --appimage-extract && \
+    mv squashfs-root QGroundControl && \
+    chmod +x QGroundControl/AppRun && \
+    rm QGroundControl.AppImage && \
+    usermod -a -G dialout ubuntu || true
 
 # ------------------------------------------------------------
 # 8. tmux + config
 # ------------------------------------------------------------
 RUN mkdir -p /root/.tmux/plugins && \
     git clone https://github.com/tmux-plugins/tpm /root/.tmux/plugins/tpm && \
-    wget https://raw.githubusercontent.com/SasaKuruppuarachchi/SasaKuruppuarachchi/main/.tmux.conf -P /root/ && \
+    wget -q https://raw.githubusercontent.com/SasaKuruppuarachchi/SasaKuruppuarachchi/main/.tmux.conf -O /root/.tmux.conf && \
     echo 'alias tmuxsrc="tmux source ~/.tmux.conf"' >> /root/.bashrc
 
 # ------------------------------------------------------------
-# 9. Isaac Sim environment setup in ~/.bashrc (EXACTLY as provided)
+# 9. Isaac Sim environment setup in ~/.bashrc
 # ------------------------------------------------------------
 RUN cat <<'EOF' >> /root/.bashrc
 
@@ -149,7 +165,7 @@ isaac_run() {
     ros_paths+=("/opt/ros/jazzy")
     ros_paths+=("/opt/ros/iron")
     for ros_path in "${ros_paths[@]}"; do
-        export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v "^${ros_path}" | paste -sd':' -)
+        export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v "^${ros_path}" | paste -sd ':' -)
     done
 
     if [ -f /etc/os-release ]; then
@@ -185,22 +201,18 @@ isaac_run() {
     fi
 }
 
-export PATH="/opt/venv/bin:$PATH"
-export PYTHONPATH="/opt/venv/lib/python3.11/site-packages:$PYTHONPATH"
+# Source ROS 2
+source /opt/ros/jazzy/setup.bash 2>/dev/null || echo "ROS Jazzy not found"
 EOF
-
 # ------------------------------------------------------------
-# 10. Final ROS sourcing
+# 10. Final Cleanup
 # ------------------------------------------------------------
-RUN echo 'source /opt/ros/jazzy/setup.bash' >> /root/.bashrc
-
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+           /root/.cache/pip
 # ------------------------------------------------------------
-# 11. Cleanup
-# ------------------------------------------------------------
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# ------------------------------------------------------------
-# 12. Default entrypoint
+# 11. Default Workdir & Entrypoint
 # ------------------------------------------------------------
 WORKDIR /root
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["cd /root/PX4-Autopilot && ./build/px4_sitl_default/bin/px4 -d"]
