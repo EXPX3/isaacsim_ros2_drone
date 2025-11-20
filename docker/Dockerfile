@@ -57,13 +57,14 @@ RUN ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime && \
     apt-get update -y && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
+      python3-rosdep python3-colcon-common-extensions \
       ros-jazzy-desktop \
       ros-jazzy-ament-cmake ros-jazzy-angles ros-jazzy-controller-manager \
       ros-jazzy-pluginlib ros-jazzy-urdf ros-jazzy-yaml-cpp-vendor \
       ros-jazzy-joint-state-publisher* ros-jazzy-cv-bridge \
       ros-jazzy-diagnostic-updater ros-jazzy-moveit ros-jazzy-xacro \
       ros-jazzy-realtime-tools ros-jazzy-control-toolbox \
-      ros-jazzy-ros2-control* ros-jazzy-teleop-twist-keyboard \
+      ros-jazzy-ros2-control* ros-jazzy-teleop-twist-keyboard ros-jazzy-topic-based-ros2-control \
       ros-jazzy-vision-msgs && \
     \
     /isaac-sim/python.sh -m pip install --no-cache-dir colcon-ros && \
@@ -147,6 +148,7 @@ RUN cat <<'EOF' >> /root/.bashrc
 export ISAACSIM_PATH="/isaac-sim"
 export ISAACSIM_PYTHON="${ISAACSIM_PATH}/python.sh"
 export ISAACSIM="${ISAACSIM_PATH}/isaac-sim.sh"
+alias ISAACSIM_PYTHON="/isaac-sim/python.sh"
 
 isaac_run() {
     if [ ! -x "$ISAACSIM_PYTHON" ]; then
@@ -215,4 +217,4 @@ RUN apt-get clean && \
 # ------------------------------------------------------------
 WORKDIR /root
 ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["cd /root/PX4-Autopilot && ./build/px4_sitl_default/bin/px4 -d"]
+CMD ["cd /root/PX4-Autopilot && ./build/px4_sitl_default/bin/px4 -d"] 

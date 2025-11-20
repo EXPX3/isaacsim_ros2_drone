@@ -1,7 +1,7 @@
 #!/bin/bash
 xhost +local:
 
-docker run --name isaac-sim-ros2_OG --entrypoint bash -it --gpus device=1 -e "ACCEPT_EULA=Y" --rm --network=host --privileged \
+docker run --name isaac-sim-ros2 --entrypoint bash -it --gpus device=1 -e "ACCEPT_EULA=Y" --rm --network=host --privileged --shm-size=16G \
     -v ~/docker/isaac-sim-ros2/cache/kit:/isaac-sim/kit/cache/Kit:rw \
     -v ~/docker/isaac-sim-ros2/cache/ov:/root/.cache/ov:rw \
     -v ~/docker/isaac-sim-ros2/cache/pip:/root/.cache/pip:rw \
@@ -12,6 +12,9 @@ docker run --name isaac-sim-ros2_OG --entrypoint bash -it --gpus device=1 -e "AC
     -v ~/docker/isaac-sim-ros2/documents:/root/Documents:rw \
     -v /home/giri/Documents/robotspace/IsaacSim-ros_workspaces:/root/IsaacSim-ros_workspaces \
     -v /home/giri/Documents/robotspace/IsaacSim-files:/root/IsaacSim-files \
+    -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/PegasusSimulator:/root/PegasusSimulator \
+    -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/9_ros2_graph_lidar_examples:/root/9_ros2_graph_lidar_examples \
+    -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/isaacsim_ros2_drone/rviz_config:/root/rviz_config \
     --env="DISPLAY" \
     -v $HOME/.Xauthority:/root/.Xauthority:rw \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
@@ -19,4 +22,4 @@ docker run --name isaac-sim-ros2_OG --entrypoint bash -it --gpus device=1 -e "AC
     --volume="$(pwd)/../colcon_isaac_ws:/root/colcon_isaac_ws" \
     --volume="$(pwd)/../colcon_isaac_ws:/root/colcon_isaac_ws" \
     --volume="$(pwd)/../lidar_cfg/hokuyo:/isaac-sim/exts/omni.isaac.sensor/data/lidar_configs/hokuyo" \
-    isaac-ros2-image_5_1:latest	
+    editpegasus-isaac-ros2-image_5_1:latest
