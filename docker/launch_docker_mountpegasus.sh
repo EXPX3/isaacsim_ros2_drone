@@ -13,6 +13,7 @@ docker run --name isaac-sim-ros2 --entrypoint bash -it --gpus device=1 -e "ACCEP
     -v /home/giri/Documents/robotspace/IsaacSim-ros_workspaces:/root/IsaacSim-ros_workspaces \
     -v /home/giri/Documents/robotspace/IsaacSim-files:/root/IsaacSim-files \
     -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/PegasusSimulator:/root/PegasusSimulator \
+    -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/mavros:/root/IsaacSim-ros_workspaces/jazzy_ws/src/mavros \
     -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/9_ros2_graph_lidar_examples:/root/9_ros2_graph_lidar_examples \
     -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/isaacsim_ros2_drone/rviz_config:/root/rviz_config \
     --env="DISPLAY" \
