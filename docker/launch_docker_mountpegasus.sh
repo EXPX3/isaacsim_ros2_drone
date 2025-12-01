@@ -23,4 +23,4 @@ docker run --name isaac-sim-ros2 --entrypoint bash -it --gpus device=1 -e "ACCEP
     --volume="$(pwd)/../colcon_isaac_ws:/root/colcon_isaac_ws" \
     --volume="$(pwd)/../colcon_isaac_ws:/root/colcon_isaac_ws" \
     --volume="$(pwd)/../lidar_cfg/hokuyo:/isaac-sim/exts/omni.isaac.sensor/data/lidar_configs/hokuyo" \
-    editpegasus-isaac-ros2-image_5_1:latest
+    isaacsim510_mountpegasus_humble:latest
