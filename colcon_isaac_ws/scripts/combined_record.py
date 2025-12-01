@@ -35,6 +35,8 @@ def generate_launch_description():
     vy = 0.24
     vz = 0.075
     pitch = -20.0 * deg2rad  # nose down
+    # pitch = -20.0 * deg2rad  # nose down
+
     qx = 0.0
     qy = sin(pitch / 2.0)  # rotation about Y
     qz = 0.0
