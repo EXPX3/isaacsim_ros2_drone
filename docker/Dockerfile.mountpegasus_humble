@@ -58,7 +58,7 @@ RUN apt-get update -y && \
       ros-humble-diagnostic-updater ros-humble-moveit ros-humble-xacro \
       ros-humble-realtime-tools ros-humble-control-toolbox \
       ros-humble-ros2-control* ros-humble-teleop-twist-keyboard \
-      ros-humble-vision-msgs ros-humble-mavros ros-humble-topic-based-ros2-control && \
+      ros-humble-vision-msgs ros-humble-mavros ros-humble-topic-based-ros2-control ros-humble-rmw-cyclonedds-cpp && \
     \
     /isaac-sim/python.sh -m pip install --no-cache-dir colcon-ros && \
     \

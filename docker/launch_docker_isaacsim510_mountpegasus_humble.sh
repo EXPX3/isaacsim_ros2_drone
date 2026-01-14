@@ -2,7 +2,7 @@
 xhost +local:
 
 docker run --name isaac-sim-ros2-humble-mountpegasus --entrypoint bash -it --gpus device=1 -e "ACCEPT_EULA=Y" --rm --network=host --ipc=host --privileged --shm-size=16G \
-    -e RMW_IMPLEMENTATION=rmw_fastrtps_cpp \
+    -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
     -e ROS_DOMAIN_ID=42 \
     -v ~/docker/isaac-sim-ros2-humble-mountpegasus/cache/kit:/isaac-sim/kit/cache/Kit:rw \
     -v ~/docker/isaac-sim-ros2-humble-mountpegasus/cache/ov:/root/.cache/ov:rw \
