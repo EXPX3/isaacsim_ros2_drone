@@ -19,7 +19,7 @@ ros2 run tf2_ros static_transform_publisher \
 # Rotation: Pitch = -20 degrees (approx -0.349066 radians)
 # Syntax: x y z yaw pitch roll parent child
 ros2 run tf2_ros static_transform_publisher \
-0.075 0.24 0.075 0 -0.349066 0 altax_center_frd rtxlidar \
+0.075 0.24 0.075 0 -0.349066 3.14159 altax_center_frd rtxlidar \
 --ros-args -p use_sim_time:=true &
 
 # 3. altax_center_frd -> camera

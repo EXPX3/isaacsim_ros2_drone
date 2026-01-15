@@ -1,7 +1,7 @@
 #!/bin/bash
 xhost +local:
 
-docker run --name isaac-sim-ros2-humble-mountpegasus --entrypoint bash -it --gpus device=1 -e "ACCEPT_EULA=Y" --rm --network=host --ipc=host --privileged --shm-size=16G \
+docker run --name isaac-sim-ros2-humble-mountpegasus --entrypoint bash -it --gpus all -e "ACCEPT_EULA=Y" --rm --network=host --ipc=host --privileged --shm-size=16G \
     -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
     -e ROS_DOMAIN_ID=42 \
     -v ~/docker/isaac-sim-ros2-humble-mountpegasus/cache/kit:/isaac-sim/kit/cache/Kit:rw \
@@ -15,7 +15,8 @@ docker run --name isaac-sim-ros2-humble-mountpegasus --entrypoint bash -it --gpu
     -v /home/giri/Documents/robotspace/IsaacSim-ros_workspaces:/root/IsaacSim-ros_workspaces \
     -v /home/giri/Documents/robotspace/IsaacSim-files:/root/IsaacSim-files \
     -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/PegasusSimulator:/root/PegasusSimulator \
-    -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/9_ros2_graph_lidar_examples:/root/9_ros2_graph_lidar_examples \
+    -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/isaacsim_ros2_drone/examples:/root/examples \
+    -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/isaacsim_ros2_drone/colcon_isaac_ws/config/px4_config_for_non_sim_time.yaml:/opt/ros/humble/share/mavros/launch/px4_config.yaml \
     --env="DISPLAY" \
     -v $HOME/.Xauthority:/root/.Xauthority:rw \
     -v /tmp/.X11-unix:/tmp/.X11-unix \

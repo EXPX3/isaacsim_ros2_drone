@@ -14,6 +14,7 @@ RUN mkdir -p /var/lib/apt/lists/partial && \
     chmod -R 755 /var/lib/apt/lists && \
     rm -rf /var/lib/apt/lists/*
 
+# CHANGE 1: Changed 'noble' to 'jammy' to match the OS version (Ubuntu 22.04)
 RUN apt-get update -y -qq && \
     apt-get upgrade -y -qq --no-install-recommends && \
     apt-get install -y -qq --no-install-recommends \
@@ -31,7 +32,7 @@ RUN apt-get update -y -qq && \
     # Add Kitware repo with proper key isolation
     wget -qO - https://apt.kitware.com/keys/kitware-archive-latest.asc | \
       gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ noble main" > /etc/apt/sources.list.d/kitware.list && \
+    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main" > /etc/apt/sources.list.d/kitware.list && \
     \
     apt-get update -y -qq && \
     apt-get install -y -qq cmake && \
@@ -48,7 +49,9 @@ RUN apt-get update -y -qq && \
 # ------------------------------------------------------------
 # 2. ROS 2 humble Robotics Packages
 # ------------------------------------------------------------
-RUN apt-get update -y && \
+# CHANGE 2: Added explicit removal of kitware list before update to prevent caching errors
+RUN rm -f /etc/apt/sources.list.d/kitware.list && \
+    apt-get update -y && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
       python3-rosdep python3-colcon-common-extensions \
@@ -213,4 +216,4 @@ RUN /bin/bash -c ". /opt/ros/humble/setup.bash && \
 # ------------------------------------------------------------
 WORKDIR /root
 ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["cd /root/PX4-Autopilot && ./build/px4_sitl_default/bin/px4 -d"] 
+CMD ["cd /root/PX4-Autopilot && ./build/px4_sitl_default/bin/px4 -d"]
