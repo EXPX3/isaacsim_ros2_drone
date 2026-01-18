@@ -1,0 +1,46 @@
+# below section in px4_config.yaml
+
+# global_position
+/**/global_position:
+  ros__parameters:
+    frame_id: "map_ned"               # origin frame
+    child_frame_id: "drone_base_link_frd"   # body-fixed frame
+    rot_covariance: 99999.0       # covariance for attitude?
+    gps_uere: 1.0                 # User Equivalent Range Error (UERE) of GPS sensor (m)
+    use_relative_alt: true        # use relative altitude for local coordinates
+    tf.send: true                # send TF?
+    tf.frame_id: "map_ned"            # TF frame_id
+    tf.global_frame_id: "earth"   # TF earth frame_id
+    tf.child_frame_id: "drone_base_link_frd"  # TF child_frame_id
+
+
+
+# static transformers launch
+
+#!/usr/bin/env bash
+
+echo "Launching static transforms..."
+
+# 1. drone_base_link_frd -> altax_center_frd
+# Offset: Y = -0.095
+# Rotation: None
+ros2 run tf2_ros static_transform_publisher \
+0.0 -0.095 0.0 0 0 0 drone_base_link_frd altax_center_frd &
+
+# 2. altax_center_frd -> rtxlidar
+# Offset: x=0.075, y=0.24, z=0.075
+# Rotation: Yaw = 0; Pitch = -20 degrees; Roll = 180 degrees; (approx -0.349066 radians) 
+# Syntax: x y z yaw pitch roll parent child
+ros2 run tf2_ros static_transform_publisher \
+0.075 0.24 0.075 0 -0.349066 3.14159 altax_center_frd rtxlidar &
+
+# 3. altax_center_frd -> camera
+# Offset: z=0.20 (20cm down)
+# Rotation: None
+ros2 run tf2_ros static_transform_publisher \
+0.0 0.0 0.20 0 0 0 altax_center_frd camera &
+
+# 4. camera_body_frd -> gimbal_link
+# (Commented out in Python script, kept here for reference if needed later)
+# ros2 run tf2_ros static_transform_publisher \
+# 0 0 0 0 0 0 camera_body_frd gimbal_link &
