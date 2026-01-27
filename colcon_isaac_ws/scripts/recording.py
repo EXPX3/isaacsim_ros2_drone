@@ -45,14 +45,14 @@ def generate_launch_description():
     # Forward 0.075 m, Right 0.24 m (FRD right is +Y, but need negative Y;
     # vx=0.075, vy=0.24 right, vz=0.075 down)
     deg2rad = pi / 180.0
-    vx = 0.075
+    vx = 0.13
     vy = 0.24
-    vz = 0.075
-    roll = 180 * deg2rad
-    pitch = -20 * deg2rad  # nose down
-    yaw = 115.0 * deg2rad
+    vz = 0.11
+    roll = 0 * deg2rad
+    pitch = -90 * deg2rad  # nose down
+    yaw = 0 * deg2rad
     #qx, qy, qz, qw = quaternion_from_euler(roll, pitch, yaw) #expects RPY radian, returns normalized quat with magnitude 1
-    qx, qy, qz, qw = R.from_euler("xyz", [roll, pitch, yaw]).as_quat()
+    qx, qy, qz, qw = R.from_euler("zxy", [yaw, roll, pitch]).as_quat()
 
     altax_to_velodyne = Node(
         package="tf2_ros",
@@ -97,19 +97,20 @@ def generate_launch_description():
     )
     # 5) test
     deg2rad = pi / 180.0
-    vx = 0.075
+    vx = 0.13
     vy = 0.24
-    vz = 0.075
-    roll = 160 * deg2rad
-    pitch = 0 * deg2rad  # nose down
-    yaw = 0.0 * deg2rad
+    vz = 0.11
+    roll = 0 * deg2rad
+    pitch = -90 * deg2rad  # nose down
+    yaw = 0 * deg2rad
     #qx, qy, qz, qw = quaternion_from_euler(roll, pitch, yaw) #expects RPY radian, returns normalized quat with magnitude 1
+    # qx, qy, qz, qw = R.from_euler("zxy", [yaw, roll, pitch]).as_quat()
     qx, qy, qz, qw = R.from_euler("xyz", [roll, pitch, yaw]).as_quat()
 
-    map_to_velodyne = Node(
+    map_ned_to_velodyne = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        name="map_to_velodyne",
+        name="map_ned_to_velodyne",
         output="screen",
         arguments=[
             "--frame-id", "map_ned",
@@ -121,9 +122,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([  
-                                px4_to_altax,
-                                altax_to_velodyne,
+                                # px4_to_altax,
+                                # altax_to_velodyne,
                                 # altax_to_camera_body,
                                 # camera_body_to_gimbal,
-                                # map_to_velodyne
+                                map_ned_to_velodyne
     ])
