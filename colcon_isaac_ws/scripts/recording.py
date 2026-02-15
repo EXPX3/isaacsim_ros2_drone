@@ -36,7 +36,7 @@ def generate_launch_description():
         arguments=[
             "--frame-id", "base_link_frd",
             "--child-frame-id", "altax_center_frd",
-            "--x", "0.0", "--y", "-0.095", "--z", "0.0",
+            "--x", "0.0", "--y", "0.095", "--z", "0.0",
             "--roll", "0", "--pitch", "0", "--yaw", "0",
         ],
     )
@@ -46,13 +46,15 @@ def generate_launch_description():
     # vx=0.075, vy=0.24 right, vz=0.075 down)
     deg2rad = pi / 180.0
     vx = 0.13
-    vy = 0.24
-    vz = 0.11
+    vy = -0.24
+    vz = -0.11
     roll = 0 * deg2rad
-    pitch = -90 * deg2rad  # nose down
+    pitch = 90 * deg2rad  # nose down
     yaw = 0 * deg2rad
     #qx, qy, qz, qw = quaternion_from_euler(roll, pitch, yaw) #expects RPY radian, returns normalized quat with magnitude 1
-    qx, qy, qz, qw = R.from_euler("zxy", [yaw, roll, pitch]).as_quat()
+    # qx, qy, qz, qw = R.from_euler("zxy", [yaw, roll, pitch]).as_quat()
+    qx, qy, qz, qw = R.from_euler("xyz", [roll, pitch, yaw]).as_quat()
+
 
     altax_to_velodyne = Node(
         package="tf2_ros",
@@ -76,25 +78,12 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "--frame-id", "altax_center_frd",
-            "--child-frame-id", "camera_body_frd",
-            "--x", "0.0", "--y", "0.0", "--z", "0.20",
+            "--child-frame-id", "camera",
+            "--x", "0.0", "--y", "0.0", "--z", "-0.20",
             "--roll", "0", "--pitch", "0", "--yaw", "0",
         ],
     )
 
-    # 4) camera_body_frd → gimbal_link
-    camera_body_to_gimbal = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        name="camera_body_to_gimbal",
-        output="screen",
-        arguments=[
-            "--frame-id", "camera_body_frd",
-            "--child-frame-id", "gimbal_link",
-            "--x", "0", "--y", "0", "--z", "0",
-            "--roll", "0", "--pitch", "0", "--yaw", "0",
-        ],
-    )
     # 5) test
     deg2rad = pi / 180.0
     vx = 0.13
@@ -122,9 +111,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([  
-                                # px4_to_altax,
-                                # altax_to_velodyne,
-                                # altax_to_camera_body,
+                                px4_to_altax,
+                                altax_to_velodyne,
+                                altax_to_camera_body,
                                 # camera_body_to_gimbal,
-                                map_ned_to_velodyne
+                                # map_ned_to_velodyne
     ])

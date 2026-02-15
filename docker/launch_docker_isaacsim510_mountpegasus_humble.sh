@@ -17,6 +17,7 @@ docker run --name isaac-sim-ros2-humble-mountpegasus --entrypoint bash -it --gpu
     -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/PegasusSimulator:/root/PegasusSimulator \
     -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/isaacsim_ros2_drone/examples:/root/examples \
     -v /home/giri/Documents/robotspace/ws_isaacsim_ros2_drone_2/isaacsim_ros2_drone/colcon_isaac_ws/config/px4_config_for_non_sim_time.yaml:/opt/ros/humble/share/mavros/launch/px4_config.yaml \
+    -v /media/giri/INTENSO2/bagfiles_jan27th/rosbag_1970-01-01_01-10-35:/root/colcon_isaac_ws/bags//rosbag_1970-01-01_01-10-35 \
     --env="DISPLAY" \
     -v $HOME/.Xauthority:/root/.Xauthority:rw \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
